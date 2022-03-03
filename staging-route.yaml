@@ -1,0 +1,17 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: python-credit-card-fraud
+  namespace: staging
+  labels:
+    app: python-credit-card-fraud
+    app.kubernetes.io/component: python-credit-card-fraud
+    app.kubernetes.io/instance: python-credit-card-fraud
+spec:
+  to:
+    kind: Service
+    name: python-credit-card-fraud
+    weight: 100
+  port:
+    targetPort: 8080-tcp
+  wildcardPolicy: None

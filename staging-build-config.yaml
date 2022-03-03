@@ -1,0 +1,23 @@
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  annotations:
+    openshift.io/generated-by: OpenShiftNewBuild
+  name: python-credit-card-fraud
+  namespace: staging
+  labels:
+    build: python-credit-card-fraud
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'python-credit-card-fraud:latest'
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        namespace: openshift
+        name: 'python:latest'
+  source:
+    type: Binary

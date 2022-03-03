@@ -1,0 +1,10 @@
+kind: ImageStream
+apiVersion: image.openshift.io/v1
+metadata:
+  name: python-credit-card-fraud
+  namespace: staging
+  labels:
+    build: python-credit-card-fraud
+spec:
+  lookupPolicy:
+    local: false
