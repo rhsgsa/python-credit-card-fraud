@@ -1,0 +1,162 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  creationTimestamp: '2022-03-03T13:30:06Z'
+  generation: 1
+  managedFields:
+    - apiVersion: tekton.dev/v1beta1
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:spec':
+          .: {}
+          'f:finally': {}
+          'f:params': {}
+          'f:resources': {}
+          'f:tasks': {}
+          'f:workspaces': {}
+      manager: Mozilla
+      operation: Update
+      time: '2022-03-03T13:30:06Z'
+  name: cc-fraud-staging-pipeline
+  namespace: pipeline
+  resourceVersion: '12625776'
+  uid: 9122ffbf-fc11-4d75-89b6-f596ac8ca71c
+spec:
+  params:
+    - default: staging
+      name: namespace
+      type: string
+    - default: 'https://github.com/likhia/python-credit-card-fraud.git'
+      name: git-project
+      type: string
+    - default: python-credit-card-fraud
+      name: app-name
+      type: string
+  tasks:
+    - name: git-clone
+      params:
+        - name: url
+          value: $(params.git-project)
+        - name: revision
+          value: main
+        - name: submodules
+          value: 'true'
+        - name: depth
+          value: '1'
+        - name: sslVerify
+          value: 'true'
+        - name: deleteExisting
+          value: 'true'
+        - name: verbose
+          value: 'true'
+        - name: gitInitImage
+          value: >-
+            registry.redhat.io/openshift-pipelines/pipelines-git-init-rhel8@sha256:af7dd5b3b1598a980f17d5f5d3d8a4b11ab4f5184677f7f17ad302baa36bd3c1
+        - name: userHome
+          value: /tekton/home
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: cc-workspace
+    - name: createbuild
+      params:
+        - name: SCRIPT
+          value: oc apply -f $(params.namespace)-build-config.yaml
+        - name: VERSION
+          value: latest
+      runAfter:
+        - git-clone
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      workspaces:
+        - name: manifest-dir
+          workspace: cc-workspace
+        - name: kubeconfig-dir
+          workspace: cc-workspace
+    - name: createimage
+      params:
+        - name: SCRIPT
+          value: oc apply -f $(params.namespace)-image.yaml
+        - name: VERSION
+          value: latest
+      runAfter:
+        - createbuild
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      workspaces:
+        - name: manifest-dir
+          workspace: cc-workspace
+        - name: kubeconfig-dir
+          workspace: cc-workspace
+    - name: build
+      params:
+        - name: SCRIPT
+          value: >-
+            oc start-build $(params.app-name) --from-dir=. --follow -n
+            $(params.namespace)
+        - name: VERSION
+          value: latest
+      runAfter:
+        - createimage
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      workspaces:
+        - name: manifest-dir
+          workspace: cc-workspace
+        - name: kubeconfig-dir
+          workspace: cc-workspace
+    - name: deployment
+      params:
+        - name: SCRIPT
+          value: oc apply -f $(params.namespace)-deployment.yaml
+        - name: VERSION
+          value: latest
+      runAfter:
+        - build
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      workspaces:
+        - name: manifest-dir
+          workspace: cc-workspace
+        - name: kubeconfig-dir
+          workspace: cc-workspace
+    - name: service
+      params:
+        - name: SCRIPT
+          value: oc apply -f $(params.namespace)-service.yaml
+        - name: VERSION
+          value: latest
+      runAfter:
+        - deployment
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      workspaces:
+        - name: manifest-dir
+          workspace: cc-workspace
+        - name: kubeconfig-dir
+          workspace: cc-workspace
+    - name: route
+      params:
+        - name: SCRIPT
+          value: oc apply -f $(params.namespace)-route.yaml
+        - name: VERSION
+          value: latest
+      runAfter:
+        - service
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      workspaces:
+        - name: manifest-dir
+          workspace: cc-workspace
+        - name: kubeconfig-dir
+          workspace: cc-workspace
+  workspaces:
+    - name: cc-workspace
