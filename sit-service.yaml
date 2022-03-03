@@ -1,0 +1,20 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-credit-card-fraud
+  namespace: sit
+  labels:
+    app: python-credit-card-fraud
+    app.kubernetes.io/component: python-credit-card-fraud
+    app.kubernetes.io/instance: python-credit-card-fraud
+  annotations:
+    openshift.io/generated-by: OpenShiftNewApp
+spec:
+  ports:
+    - name: 8080-tcp
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+  selector:
+    deployment: python-credit-card-fraud

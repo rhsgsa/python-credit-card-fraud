@@ -1,0 +1,137 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  creationTimestamp: '2022-03-03T14:15:20Z'
+  generation: 1
+  managedFields:
+    - apiVersion: tekton.dev/v1beta1
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:spec':
+          .: {}
+          'f:finally': {}
+          'f:params': {}
+          'f:resources': {}
+          'f:tasks': {}
+          'f:workspaces': {}
+      manager: Mozilla
+      operation: Update
+      time: '2022-03-03T14:15:20Z'
+  name: cc-fraud-sit-pipeline
+  namespace: pipeline
+  resourceVersion: '12676461'
+  uid: 68713753-ff5a-4981-a64c-f0275649a0de
+spec:
+  params:
+    - default: 'https://github.com/likhia/python-credit-card-fraud.git'
+      name: git-project
+      type: string
+    - default: sit
+      name: namespace
+      type: string
+    - default: staging
+      name: previous-namespace
+      type: string
+    - default: 'python-credit-card-fraud:latest'
+      name: staging-tag
+      type: string
+    - default: 'python-credit-card-fraud:sit'
+      name: sit-tag
+      type: string
+  tasks:
+    - name: git-clone
+      params:
+        - name: url
+          value: $(params.git-project)
+        - name: revision
+          value: main
+        - name: submodules
+          value: 'true'
+        - name: depth
+          value: '1'
+        - name: sslVerify
+          value: 'true'
+        - name: deleteExisting
+          value: 'true'
+        - name: verbose
+          value: 'true'
+        - name: gitInitImage
+          value: >-
+            registry.redhat.io/openshift-pipelines/pipelines-git-init-rhel8@sha256:af7dd5b3b1598a980f17d5f5d3d8a4b11ab4f5184677f7f17ad302baa36bd3c1
+        - name: userHome
+          value: /tekton/home
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: cc-sit-workspace
+    - name: tag
+      params:
+        - name: SCRIPT
+          value: >-
+            oc -n $(params.previous-namespace) tag
+            $(params.previous-namespace)/$(params.staging-tag)
+            $(params.namespace)/$(params.sit-tag)
+        - name: VERSION
+          value: latest
+      runAfter:
+        - git-clone
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      workspaces:
+        - name: manifest-dir
+          workspace: cc-sit-workspace
+        - name: kubeconfig-dir
+          workspace: cc-sit-workspace
+    - name: deployment
+      params:
+        - name: SCRIPT
+          value: oc apply -f $(params.namespace)-deployment.yaml
+        - name: VERSION
+          value: latest
+      runAfter:
+        - tag
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      workspaces:
+        - name: manifest-dir
+          workspace: cc-sit-workspace
+        - name: kubeconfig-dir
+          workspace: cc-sit-workspace
+    - name: service
+      params:
+        - name: SCRIPT
+          value: oc apply -f $(params.namespace)-service.yaml
+        - name: VERSION
+          value: latest
+      runAfter:
+        - deployment
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      workspaces:
+        - name: manifest-dir
+          workspace: cc-sit-workspace
+        - name: kubeconfig-dir
+          workspace: cc-sit-workspace
+    - name: route
+      params:
+        - name: SCRIPT
+          value: oc apply -f $(params.namespace)-route.yaml
+        - name: VERSION
+          value: latest
+      runAfter:
+        - service
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      workspaces:
+        - name: manifest-dir
+          workspace: cc-sit-workspace
+        - name: kubeconfig-dir
+          workspace: cc-sit-workspace
+  workspaces:
+    - name: cc-sit-workspace
