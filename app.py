@@ -21,7 +21,7 @@ class MakePrediction(Resource):
         prediction = loaded_model.predict([transaction_info])[0]
 
         if prediction == 0:
-            predicted_class = 'Normal Transaction'
+            predicted_class = 'Normal Transaction 1'
         else:
             predicted_class = 'Fraud Transaction'
 
