@@ -18,4 +18,5 @@ termcolor==1.1.0
 threadpoolctl==3.1.0
 Werkzeug==2.0.3
 xgboost==1.5.2
-waitress
+waitress==2.1.0
+prometheus_flask_exporter==0.18.7
