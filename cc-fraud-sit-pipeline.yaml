@@ -1,26 +1,8 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  creationTimestamp: '2022-03-03T14:15:20Z'
-  generation: 1
-  managedFields:
-    - apiVersion: tekton.dev/v1beta1
-      fieldsType: FieldsV1
-      fieldsV1:
-        'f:spec':
-          .: {}
-          'f:finally': {}
-          'f:params': {}
-          'f:resources': {}
-          'f:tasks': {}
-          'f:workspaces': {}
-      manager: Mozilla
-      operation: Update
-      time: '2022-03-03T14:15:20Z'
   name: cc-fraud-sit-pipeline
   namespace: pipeline
-  resourceVersion: '12676461'
-  uid: 68713753-ff5a-4981-a64c-f0275649a0de
 spec:
   params:
     - default: 'https://github.com/likhia/python-credit-card-fraud.git'
