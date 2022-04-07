@@ -14,6 +14,8 @@ oc policy add-role-to-user admin system:serviceaccount:pipeline:pipeline -n sit
 
 oc policy add-role-to-user system:image-puller system:serviceaccount:sit:default -n staging
 
+Use cc-fraud-*-pipeline.yaml to create openshift pipeline for staging and sit deployments.
+
 ## Staging build and deployment
 oc new-build --name=python-credit-card-fraud --binary --image-stream=python:latest or oc apply -f staging-build-config.yaml
 
